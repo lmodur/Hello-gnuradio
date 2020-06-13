@@ -1,0 +1,112 @@
+Process to install - python, libini,libiio,gr-iio,gnuradio,libad9361
+
+
+#Install Ubuntu 18.04
+#Install python3  and python 
+sudo apt-get install -y python2.7-minimal
+sudo apt-get install python3
+
+#First, make sure you have libIIO installed with the associated python bindings, and that they are on your python path. Next you can install the module. This can be done from the source code itself:
+
+analog@precision:~$ sudo apt-get update
+analog@precision:~$ sudo apt-get install build-essential
+
+sudo apt-get install libxml2-dev bison flex libcdk5-dev cmake
+sudo apt-get install libaio-dev libusb-1.0-0-dev
+sudo apt-get install libserialport-dev libavahi-client-dev
+sudo apt-get install doxygen graphviz
+sudo apt-get install python-setuptools
+git clone https://github.com/pcercuei/libini.git
+cd libini
+sudo mkdir build
+cd build
+cmake ../
+make
+sudo make install
+cd ..
+git clone https://github.com/analogdevicesinc/libiio.git
+cd libiio
+sudo mkdir build
+cd build
+cmake ../ -DPYTHON_BINDINGS=ON
+make -j$(nproc)
+sudo make install
+cd ..
+
+#Download and build libad9361-iio
+#Build and install libiio from source:
+
+git clone https://github.com/analogdevicesinc/libad9361-iio.git
+cd libad9361-iio
+cmake .
+make 
+sudo make install
+cd ..
+
+sudo apt install bison flex cmake git libgmp-dev
+
+#For GNU Radio 3.7+ to enable python support requires swig:
+
+sudo apt install swig
+
+#GNU Radio 3.7
+#On Ubuntu 16.04 or newer GNU Radio can be installed from the package management. The installed version should be compatible with the gr-iio package build from source. Libiio and gr-iio may also be available from the package management, but to get the latest and most feature complete work, it’s recommend to build it from the latest github sources.
+
+git clone https://github.com/analogdevicesinc/gr-iio.git
+cd gr-iio
+sudo cmake -DCMAKE_INSTALL_PREFIX=/usr .
+sudo make 
+sudo make install
+cd ..
+sudo ldconfig
+
+export PYTHONPATH=$PYTHONPATH:/usr/lib/python{PYTHON VERSION}/{site or dist}-packages
+
+#Installing GNU radio
+sudo add-apt-repository ppa:gnuradio/gnuradio-releases
+sudo apt-get update
+sudo apt-get install gnuradio
+
+#Installing sdr-pluto
+sudo apt-get install libiio-utils
+ Try to make sure you can talk to the device, and find the IIO devices:
+
+analog@imhotep:~$ iio_info -n 192.168.2.1 | grep device
+IIO context has 5 devices:
+	iio:device0: adm1177
+	iio:device1: ad9361-phy
+	iio:device2: xadc
+	iio:device3: cf-ad9361-dds-core-lpc
+	iio:device4: cf-ad9361-lpc
+
+#Install IIOOscillioscope
+ To build on a host, do not use the script, you must:
+
+    make sure the following libraries are installed. This list is maintained in the adi_update_tools.sh shell script, and can be copied/pasted to most Debian based distributions. For others - make sure they are installed, or the below steps will not work. If you are not sure how to do this - consult your distribution documentation. file: adi_update_tools.sh
+
+    > apt-get -y install libglib2.0-dev libgtk2.0-dev libgtkdatabox-dev libmatio-dev libfftw3-dev libxml2 libxml2-dev bison flex libavahi-common-dev libavahi-client-dev libcurl4-openssl-dev libjansson-dev cmake libaio-dev
+
+    build and install the libiio library, by following these instructions. Make sure you do the final make install.
+    build and install the libad9361-iio library, by following these instructions.
+    download the source
+
+    > git clone https://github.com/analogdevicesinc/iio-oscilloscope.git
+    > cd iio-oscilloscope
+    > git checkout origin/master
+
+    Or, download a zip, and uncompress it:
+
+    rgetz@pinky:~$ wget https://github.com/analogdevicesinc/iio-oscilloscope/archive/master.zip
+    rgetz@pinky:~$ unzip master.zip
+    rgetz@pinky:~/iio-oscilloscope$ cd iio-oscilloscope
+
+    and run `make` and `make install`. If you did not do a make install of the libiio, the libiio install location needs to be set in your path ie: (PATH=/usr/lib:$PATH“) or else an error “Package libiio not found..” will occur.
+
+    rgetz@pinky:~/iio-oscilloscope$ mkdir build && cd build
+    rgetz@pinky:~/iio-oscilloscope$ cmake ../ && make -j $(nproc)
+    rgetz@pinky:~/iio-oscilloscope$ sudo make install
+
+
+
+
+
