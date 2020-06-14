@@ -106,7 +106,8 @@ IIO context has 5 devices:
     rgetz@pinky:~/iio-oscilloscope$ cmake ../ && make -j $(nproc)
     rgetz@pinky:~/iio-oscilloscope$ sudo make install
 
-
+    #To make filter design tool work on gnuradio
+    sudo apt install python-qwt5-qt4
 
 
 
