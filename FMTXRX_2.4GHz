@@ -1,0 +1,67 @@
+### Tx and Rx FM signal at 2.4GHz using IQ modulator
+
+#Tx FM - v*Kv -- accumulate with mod1 , mult by 2*pi -- I = cos() and Q = sin()
+Tx in 2442MHz with 4.8MHz sampling rate  and send to Pluto
+Rx in 2442MHz with 4.8MHz sampling rate  and recieve from Pluto
+# FM -Rx -- convert I and Q in to complex 
+# Polar discriminator - M dec = arctan(z)
+
+
+###################################  Python code for accumulator  with mod 1 #######################
+import numpy as np
+from gnuradio import gr
+
+
+class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
+    """FMTX_phasegen - takes Kv as constant mult and accumulates with mod1"""
+
+    def __init__(self, Kv=1.0):  # only default arguments here
+        """arguments to this function show up as parameters in GRC"""
+        gr.sync_block.__init__(
+            self,
+            name='FMTx_phasegen',   # will show up in GRC
+            in_sig=[np.float32],
+            out_sig=[np.float32]
+        )
+        # if an attribute with the same name as a parameter is found,
+        # a callback is registered (properties work, too).
+        self.Kv = Kv
+
+    def work(self, input_items, output_items):
+        """example: multiply with constant"""
+	input_items[0] = input_items[0] *self.Kv
+	output_items[0][0] = input_items[0][0]
+	for i in range(1, len(input_items[0])):        
+		output_items[0][i] = (input_items[0][i] + output_items[0][i-1])%1
+        return len(output_items[0])
+        
+        #########################################################################################################
+        
+##########################   Python code for Polar discriminator  ##########################################
+import numpy as np
+from gnuradio import gr
+import math,cmath
+
+class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
+    """FMRx- polar discriminator, takes IQ in complex format and returns output in float"""
+
+    def __init__(self, example_param=1.0):  # only default arguments here
+        """arguments to this function show up as parameters in GRC"""
+        gr.sync_block.__init__(
+            self,
+            name='Embedded Python Block',   # will show up in GRC
+            in_sig=[np.complex64],
+            out_sig=[np.float32]
+        )
+        # if an attribute with the same name as a parameter is found,
+        # a callback is registered (properties work, too).
+        self.example_param = example_param
+
+    def work(self, input_items, output_items):
+        """example: multiply with constant"""
+	for i in range(1, len(input_items[0])):         
+		output_items[0][i] = cmath.phase(input_items[0][i] * np.conj(input_items[0][i-1]))
+        return len(output_items[0])
+        
+        #######################################################################################################################
+
