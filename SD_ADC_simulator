@@ -1,0 +1,197 @@
+Simulate SD ADC using GNU radio
+
+Quantizer - 4 bits signed that quantizes between -1V to +1V. Inputs above and below will be saturated. Output is between 0x0000 to 0xFFFF
+DAC will convert back to outputs using the same quantizer levels
+
+First order SD will integrate error between DAC output (one sample delayed) and the input. The  integrated error will be quantized by the quantizer.
+
+##########################################################################################################################################################
+import numpy as np
+from gnuradio import gr
+
+
+class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
+    """Embedded Python Block example - a simple multiply const"""
+
+    def __init__(self, example_param=1.0):  # only default arguments here
+        """4 bit signed quantizer with first order SD"""
+        gr.sync_block.__init__(
+            self,
+            name='4 bit signed quantizer with first order SD',   # will show up in GRC
+            in_sig=[np.float32],
+            out_sig=[np.float32]
+        )
+        # if an attribute with the same name as a parameter is found,
+        # a callback is registered (properties work, too).
+        self.example_param = example_param
+
+    def work(self, input_items, output_items):
+        """example: multiply with constant"""
+	u =[np.float32]
+	v =[np.float32]
+	u = (len(input_items[0],1)
+	
+	np.zeros(u)
+	np.zeros(v)
+	u[0] = input_items[0][0]
+	v[0] = 0
+	output_items[0][0] = 0
+	for i in range(1,len(input_items[0])):
+		u[i] = input_items[0][i] - output_items[0][i-1] 
+		v[i] = v[i-1] + u[i]
+        	if (v[i] >= -0.0625 and v[i] < 0.0625) :
+			output_items[0][i] = 0
+		elif (v[i] >=0.0625 and v[i] < 0.1875) :
+			output_items[0][i] = 1
+		elif (v[i] >=0.1875  and v[i] < 0.3125) :
+			output_items[0][i] = 2
+		elif (v[i] >= 0.3125 and v[i] < 0.4375) :
+			output_items[0][i] = 3
+		elif (v[i] >= 0.4375 and v[i] < 0.5625) :
+			output_items[0][i] = 4
+		elif (v[i] >= 0.5625 and v[i] < 0.6875) :
+			output_items[0][i] = 5
+		elif (v[i] >= 0.6875 and v[i] < 0.8125) :
+			output_items[0][i] = 6
+		elif (v[i] >= 0.8125 and v[i] < 0.9375) :
+			output_items[0][i] = 7
+		elif (v[i] < -0.0625 and v[i] >= -0.1875) :
+			output_items[0][i] = -1
+		elif (v[i] < -0.1875 and v[i] >= -0.3125) :
+			output_items[0][i] = -2
+		elif (v[i] < -0.3125 and v[i] >= -0.4375) :
+			output_items[0][i] = -3
+		elif (v[i] < -0.4375 and v[i] >= -0.5625) :
+			output_items[0][i] = -4
+		elif (v[i] < -0.5625 and v[i] >= -0.6875) :
+			output_items[0][i] = -5
+		elif (v[i] < -0.6875 and v[i] >= -0.8125) :
+			output_items[0][i] = -6
+		elif (v[i] < -0.8125 and v[i] >= -0.9375) :
+			output_items[0][i] = -7
+		elif (v[i] < -0.9375 and v[i] >= -1) :
+			output_items[0][i] = -8
+
+		
+        return len(output_items[0])
+        ##############################################################################################################################
+        
+        Second order loop is as below-
+        ##############################################################
+        import numpy as np
+from gnuradio import gr
+import math
+
+class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
+    """Embedded Python Block example - a simple multiply const"""
+
+    def __init__(self, example_param=1.0):  # only default arguments here
+        """4 bit signed quantizer with second order SD"""
+        gr.sync_block.__init__(
+            self,
+            name='4 bit signed quantizer with second order SD',   # will show up in GRC
+            in_sig=[np.float32],
+            out_sig=[np.float32]
+        )
+        # if an attribute with the same name as a parameter is found,
+        # a callback is registered (properties work, too).
+        self.example_param = example_param
+
+    def work(self, input_items, output_items):
+        """example: multiply with constant"""
+	u = []
+	u.append([])
+	
+	v = []
+	v.append([])
+
+	x = []
+	x.append([])
+
+	y = []
+	y.append([])
+
+	dac_out = []
+	dac_out.append([])
+
+
+	u[0][:] = np.zeros(len(input_items[0])) 
+	v[0][:] = np.zeros(len(input_items[0]))
+	x[0][:] = np.zeros(len(input_items[0]))
+	y[0][:] = np.zeros(len(input_items[0]))		
+	dac_out[0][:] = np.zeros(len(input_items[0]))	 
+
+	x[0][0] = input_items[0][0]
+	y[0][0] = 0
+	u[0][0] = 0
+	v[0][0] = 0
+	output_items[0][0] = 0
+	
+	
+	for i in range(1,len(input_items[0])):
+		x[0][i] = input_items[0][i] - dac_out[0][i-1] 
+		y[0][i] = y[0][i-1] + x[0][i]
+		if y[0][i] > 1:
+			y[0][i] = 1
+		elif y[0][i] < -1:
+			y[0][i] = -1
+		u[0][i] = y[0][i] - dac_out[0][i-1]
+		v[0][i] = v[0][i-1] + u[0][i]
+        	if (v[0][i] >= -0.0625 and v[0][i] < 0.0625) :
+			output_items[0][i] = 0
+			dac_out[0][i] = (-0.0625 + 0.0625)/2
+		elif (v[0][i] >=0.0625 and v[0][i] < 0.1875) :
+			output_items[0][i] = 1
+			dac_out[0][i] = (0.0625 + 0.1875)/2
+		elif (v[0][i] >=0.1875  and v[0][i] < 0.3125) :
+			output_items[0][i] = 2
+			dac_out[0][i] = (0.1875 + 0.3125)/2
+		elif (v[0][i] >= 0.3125 and v[0][i] < 0.4375) :
+			output_items[0][i] = 3
+			dac_out[0][i] = (0.3125 + 0.4375)/2
+		elif (v[0][i] >= 0.4375 and v[0][i] < 0.5625) :
+			output_items[0][i] = 4
+			dac_out[0][i] = (0.4375 + 0.5625)/2
+		elif (v[0][i] >= 0.5625 and v[0][i] < 0.6875) :
+			output_items[0][i] = 5
+			dac_out[0][i] = (0.5625 + 0.6875)/2
+		elif (v[0][i] >= 0.6875 and v[0][i] < 0.8125) :
+			output_items[0][i] = 6
+			dac_out[0][i] = (0.6875 + 0.8125)/2
+		elif (v[0][i] >= 0.8125 and v[0][i] < 0.9375) :
+			output_items[0][i] = 7
+			dac_out[0][i] = (0.8125 + 0.9375)/2
+		elif (v[0][i] >= 0.9375) :
+			output_items[0][i] = 7
+			dac_out[0][i] = (0.8125 + 0.9375)/2
+		elif (v[0][i] < -0.0625 and v[0][i] >= -0.1875) :
+			output_items[0][i] = -1
+			dac_out[0][i] = (-0.0625 - 0.1875)/2
+		elif (v[0][i] < -0.1875 and v[0][i] >= -0.3125) :
+			output_items[0][i] = -2
+			dac_out[0][i] = (-0.1875 - 0.3125)/2
+		elif (v[0][i] < -0.3125 and v[0][i] >= -0.4375) :
+			output_items[0][i] = -3
+			dac_out[0][i] = (-0.3125 - 0.4375)/2
+		elif (v[0][i] < -0.4375 and v[0][i] >= -0.5625) :
+			output_items[0][i] = -4
+			dac_out[0][i] = (-0.4375 - 0.5625)/2
+		elif (v[0][i] < -0.5625 and v[0][i] >= -0.6875) :
+			output_items[0][i] = -5
+			dac_out[0][i] = (-0.5625 - 0.6875)/2
+		elif (v[0][i] < -0.6875 and v[0][i] >= -0.8125) :
+			output_items[0][i] = -6
+			dac_out[0][i] = (-0.6875 - 0.8125)/2
+		elif (v[0][i] < -0.8125 and v[0][i] >= -0.9375) :
+			output_items[0][i] = -7
+			dac_out[0][i] = (-0.8125 - 0.9375)/2
+		elif (v[0][i] < -0.9375 and v[0][i] >= -1) :
+			output_items[0][i] = -8
+			dac_out[0][i] = (-0.9375 - 1)/2
+		elif (v[0][i] < -1):
+			output_items[0][i] = -8
+			dac_out[0][i] = (-0.9375 - 1)/2
+
+        return len(output_items[0])
+##########################################################################################################################################
+
