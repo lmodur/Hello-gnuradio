@@ -32,22 +32,35 @@ def signalDetect(sig,noise_pwr):
     return detect
 
 
-def packetDetect(r,W,L):
-    D = 16*L
-    Lp = W*L 
+def packetDetect(r,L):
+    base_len = 13
+    D = base_len*L 
     corrn = np.zeros(np.size(r)) + 1j*np.zeros(np.size(r))
     corrd = np.zeros(np.size(r)) + 1j*np.zeros(np.size(r))
-    res = np.zeros(np.size(r))
-    resd = np.zeros(np.size(r))
-    for n in range(np.size(r)):
-        for k in range(Lp):
-            if n+k+D < np.size(r):
-                corrn[n] = corrn[n] + r[n+k]*np.conj(r[n+k+D])
-                corrd[n] = corrd[n] + r[n+k+D]*np.conj(r[n+k+D])
-        if corrd[n] != 0:
-            res[n] = np.abs(corrn[n])/np.abs(corrd[n])
-            resd[n] = res[n] - res[n-1]   
-    return res
+    res = np.array([])    
+    rd = np.roll(r,D)
+    rd[0:D] = np.zeros(D) + 1j*np.zeros(D)
+    corrn = np.multiply(r,np.conj(rd))
+    corrd = np.multiply(r,np.conj(r))
+    
+    sum_n = 0 + 1j*0
+    sum_d = 0 + 1j*0
+    for k in range(np.size(r)-D):
+        for j in range(D):
+            sum_n = sum_n + corrn[k+j]
+            sum_d = sum_d + corrd[k+j]
+        if sum_d != 0:
+            res = np.append(res,np.abs(sum_n)/np.abs(sum_d))
+        sum_n = 0 + 1j*0
+        sum_d = 0 + 1j*0
+        
+    thresh = 0.7
+    fstart = 0
+    for z in range(np.size(res)):
+        if np.average(res[z:z+(D*3)]) > thresh:
+            fstart = z
+            break
+    return res,fstart
 
 def frameAlignment(rx,ref):
     corr = np.zeros(np.size(rx)) + 1j*np.zeros(np.size(rx))
